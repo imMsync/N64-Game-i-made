@@ -12,4 +12,11 @@ jobs:
       - name: Build ROM
         run: |
           git config --global --add safe.directory /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}
-          make
+          libdragon-cc -o my_game.elf main.c
+          libdragon-romstage -o my_game.z64 my_game.elf
+          
+      - name: Upload ROM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: n64-rom
+          path: "my_game.z64"
