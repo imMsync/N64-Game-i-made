@@ -1,6 +1,26 @@
-- name: Compile Game ROM
-  run: |
-    git config --global --add safe.directory /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}
-    mips64-elf-gcc -O2 -G0 -Wall -o my_game.elf main.c -ldragon -lc -lm -ldragonsys
-    n64tool -l 2M -t "My Game" -h /n64_toolchain/mips64-elf/lib/header my_game.z64 my_game.elf
-    chksum64 my_game.z64
+name: Build N64 ROM
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install N64 Toolchain
+        run: |
+          wget -qO- https://github.com | tar xz -C /usr/local
+
+      - name: Compile Game ROM
+        run: |
+          export PATH="/usr/local/n64_toolchain/bin:$PATH"
+          mips64-elf-gcc -O2 -G0 -I/usr/local/n64_toolchain/mips64-elf/include -L/usr/local/n64_toolchain/mips64-elf/lib -o my_game.elf main.c -ldragon -lc -lm -ldragonsys
+          n64tool -l 2M -t "My Game" -h /usr/local/n64_toolchain/mips64-elf/lib/header my_game.z64 my_game.elf
+          chksum64 my_game.z64
+
+      - name: Upload ROM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: n64-rom
+          path: "my_game.z64"
