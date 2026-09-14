@@ -9,12 +9,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build with Libdragon
-        uses: dragonminded/libdragon@v1
+        uses: dragonminded/libdragon@main
         with:
           run: |
-            mips64-elf-gcc -g -O2 -march=vr4300 -mabi=32 -o my_game.elf main.c -ldragon -lc -lm -ldragonsys
-            n64tool -l 2M -t "My Game" my_game.z64 my_game.elf
-            chksum64 my_game.z64
+            libdragon-cc -o my_game.elf main.c
+            libdragon-romstage -o my_game.z64 my_game.elf
 
       - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
