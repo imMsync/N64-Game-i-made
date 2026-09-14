@@ -1,15 +1,10 @@
-name: Build N64 ROM
-on: [push, workflow_dispatch]
+all: my_game.z64
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    container: ghcr.io/dragonminded/libdragon:latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+my_game.z64: src/main.c
+	libdragon-cc -o my_game.elf src/main.c
+	libdragon-romstage -o my_game.z64 my_game.elf
 
-      - name: Build ROM
-        run: |
-          git config --global --add safe.directory /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}
-          libdragon make
+clean:
+	rm -f *.elf *.z64
+
+.PHONY: all clean
