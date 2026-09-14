@@ -4,19 +4,16 @@ on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
+    container: ghcr.io/dragonminded/libdragon:latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install N64 Toolchain
-        run: |
-          wget -qO- https://github.com | tar xz -C /usr/local
-
       - name: Compile Game ROM
         run: |
-          export PATH="/usr/local/n64_toolchain/bin:$PATH"
-          mips64-elf-gcc -O2 -G0 -I/usr/local/n64_toolchain/mips64-elf/include -L/usr/local/n64_toolchain/mips64-elf/lib -o my_game.elf main.c -ldragon -lc -lm -ldragonsys
-          n64tool -l 2M -t "My Game" -h /usr/local/n64_toolchain/mips64-elf/lib/header my_game.z64 my_game.elf
+          git config --global --add safe.directory /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}
+          mips64-elf-gcc -O2 -std=gnu99 -march=vr4300 -mabi=32 -o my_game.elf main.c -ldragon -lc -lm -ldragonsys
+          n64tool -l 2M -t "My Game" -h /opt/libdragon/mips64-elf/lib/header my_game.z64 my_game.elf || n64tool -l 2M -t "My Game" my_game.z64 my_game.elf
           chksum64 my_game.z64
 
       - name: Upload ROM Artifact
