@@ -12,4 +12,4 @@ jobs:
       - name: Build ROM
         run: |
           git config --global --add safe.directory /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}
-          make
+          /usr/bin/libdragon make
