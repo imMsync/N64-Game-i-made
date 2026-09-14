@@ -4,20 +4,20 @@ on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/dragonminded/libdragon:latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Compile Game ROM in Libdragon Container
-        uses: docker://ghcr.io/dragonminded/libdragon:latest
-        with:
-          args: >
-            bash -c "
-            git config --global --add safe.directory /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }} &&
-            mips64-elf-gcc -O2 -std=gnu99 -march=vr4300 -mabi=32 -I\$N64_INST/mips64-elf/include -L\$N64_INST/mips64-elf/lib -o my_game.elf main.c -ldragon -lc -lm -ldragonsys &&
-            n64tool -l 2M -t \"My Game\" -h \$N64_INST/mips64-elf/lib/header my_game.z64 my_game.elf &&
-            chksum64 my_game.z64
-            "
+      - name: Compile Game ROM
+        env:
+          ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+        run: |
+          git config --global --add safe.directory /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}
+          mips64-elf-gcc -O2 -std=gnu99 -march=vr4300 -mabi=32 -I$N64_INST/mips64-elf/include -L$N64_INST/mips64-elf/lib -o my_game.elf main.c -ldragon -lc -lm -ldragonsys
+          n64tool -l 2M -t "My Game" -h $N64_INST/mips64-elf/lib/header my_game.z64 my_game.elf
+          chksum64 my_game.z64
 
       - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
