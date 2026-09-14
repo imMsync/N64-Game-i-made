@@ -4,18 +4,18 @@ on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: ghcr.io/dragonminded/libdragon:latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build ROM
-        run: |
-          git config --global --add safe.directory /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}
-          /n64_toolchain/bin/mips64-elf-gcc -g -O2 -march=vr4300 -mabi=32 -I/n64_toolchain/mips64-elf/include -L/n64_toolchain/mips64-elf/lib -o my_game.elf main.c -ldragon -lc -lm -ldragonsys
-          /n64_toolchain/bin/n64tool -l 2M -t "My Game" -h /n64_toolchain/mips64-elf/lib/header my_game.z64 my_game.elf
-          /n64_toolchain/bin/chksum64 my_game.z64
-          
+      - name: Build with Libdragon
+        uses: dragonminded/libdragon@v1
+        with:
+          run: |
+            mips64-elf-gcc -g -O2 -march=vr4300 -mabi=32 -o my_game.elf main.c -ldragon -lc -lm -ldragonsys
+            n64tool -l 2M -t "My Game" my_game.z64 my_game.elf
+            chksum64 my_game.z64
+
       - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
         with:
