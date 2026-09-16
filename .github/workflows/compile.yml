@@ -6,20 +6,33 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/dragonminded/libdragon:latest
+    env:
+      # Fallback in case the container image doesn't set N64_INST
+      N64_INST: /opt/libdragon
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Ensure git safe.directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Compile Game ROM
+        working-directory: ${{ github.workspace }}
         run: |
-          git config --global --add safe.directory /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}
-          mips64-elf-gcc -O2 -std=gnu99 -march=vr4300 -mabi=32 -I$N64_INST/mips64-elf/include -L$N64_INST/mips64-elf/lib -o my_game.elf main.c -ldragon -lc -lm -ldragonsys
+          set -euxo pipefail
+          # Use container-provided N64_INST or fallback
+          N64_INST="${N64_INST:-/opt/libdragon}"
+          echo "Using N64_INST=$N64_INST"
+          mips64-elf-gcc -O2 -std=gnu99 -march=vr4300 -mabi=32 \
+            -I"$N64_INST/mips64-elf/include" -L"$N64_INST/mips64-elf/lib" \
+            -o my_game.elf main.c -ldragon -lc -lm -ldragonsys
           mips64-elf-objcopy -O binary my_game.elf my_game.bin
-          n64tool -l 0x80000000 -t "My Game" -h $N64_INST/mips64-elf/lib/header -o my_game.z64 my_game.bin
+          n64tool -l 0x80000000 -t "My Game" -h "$N64_INST/mips64-elf/lib/header" -o my_game.z64 my_game.bin
           chksum64 my_game.z64
 
       - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
         with:
           name: n64-rom
-          path: "my_game.z64"
+          path: my_game.z64
