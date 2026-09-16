@@ -11,12 +11,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Compile Game ROM
-        env:
-          ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
         run: |
           git config --global --add safe.directory /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}
           mips64-elf-gcc -O2 -std=gnu99 -march=vr4300 -mabi=32 -I$N64_INST/mips64-elf/include -L$N64_INST/mips64-elf/lib -o my_game.elf main.c -ldragon -lc -lm -ldragonsys
-          n64tool -l 2M -t "My Game" -h $N64_INST/mips64-elf/lib/header my_game.z64 my_game.elf
+          mips64-elf-objcopy -O binary my_game.elf my_game.bin
+          n64tool -l 0x80000000 -t "My Game" -h $N64_INST/mips64-elf/lib/header -o my_game.z64 my_game.bin
           chksum64 my_game.z64
 
       - name: Upload ROM Artifact
